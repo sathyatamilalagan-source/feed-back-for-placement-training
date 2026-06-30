@@ -1,3 +1,165 @@
+document.addEventListener('DOMContentLoaded', () => {
+
+  const typingTarget = document.getElementById('typingText');
+  const fullText = 'Mr. Senthilkumar!';
+  let charIndex = 0;
+
+  function typeWriter() {
+    if (charIndex < fullText.length) {
+      typingTarget.textContent += fullText.charAt(charIndex);
+      charIndex++;
+      setTimeout(typeWriter, 80);
+    }
+  }
+  setTimeout(typeWriter, 600);
+
+  const scrollProgress = document.getElementById('scrollProgress');
+
+  function updateScrollProgress() {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const percent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    scrollProgress.style.width = percent + '%';
+  }
+  window.addEventListener('scroll', updateScrollProgress);
+  updateScrollProgress();
+
+  const revealEls = document.querySelectorAll('.reveal');
+
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('is-visible'), i * 80);
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  revealEls.forEach((el) => revealObserver.observe(el));
+
+  document.querySelectorAll('.stars').forEach((starEl) => {
+    const text = starEl.textContent.trim();
+    starEl.textContent = '';
+    [...text].forEach((char, i) => {
+      const span = document.createElement('span');
+      span.textContent = char;
+      span.style.animationDelay = `${i * 0.12}s`;
+      starEl.appendChild(span);
+    });
+  });
+
+  const starObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        const spans = entry.target.querySelectorAll('.stars span');
+        spans.forEach((span) => {
+          span.style.animation = 'none';
+
+          void span.offsetWidth;
+          span.style.animation = '';
+        });
+        starObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+
+  document.querySelectorAll('.rating-card').forEach((card) => starObserver.observe(card));
+
+  const thankYouBtn = document.getElementById('thankYouBtn');
+
+  thankYouBtn.addEventListener('click', (e) => {
+    const rect = thankYouBtn.getBoundingClientRect();
+    const ripple = document.createElement('span');
+    const size = Math.max(rect.width, rect.height);
+
+    ripple.classList.add('ripple');
+    ripple.style.width = ripple.style.height = `${size}px`;
+    ripple.style.left = `${e.clientX - rect.left - size / 2}px`;
+    ripple.style.top = `${e.clientY - rect.top - size / 2}px`;
+
+    thankYouBtn.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 600);
+
+    launchConfetti();
+  });
+
+  const canvas = document.getElementById('confettiCanvas');
+  const ctx = canvas.getContext('2d');
+  let confettiPieces = [];
+  let confettiAnimationId = null;
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  const confettiColors = ['#1e5fae', '#4fa8e0', '#ffffff', '#f5b942', '#ff7a90'];
+
+  function createConfettiPiece() {
+    return {
+      x: Math.random() * canvas.width,
+      y: -20,
+      size: Math.random() * 8 + 4,
+      color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
+      speedY: Math.random() * 3 + 2,
+      speedX: Math.random() * 2 - 1,
+      rotation: Math.random() * 360,
+      rotationSpeed: Math.random() * 8 - 4,
+      shape: Math.random() > 0.5 ? 'circle' : 'rect'
+    };
+  }
+
+  function launchConfetti() {
+    confettiPieces = confettiPieces.concat(
+      Array.from({ length: 90 }, createConfettiPiece)
+    );
+
+    if (!confettiAnimationId) {
+      confettiAnimationId = requestAnimationFrame(animateConfetti);
+    }
+
+    // Stop spawning influence after a few seconds; pieces fade out naturally
+    setTimeout(() => {
+      confettiPieces = confettiPieces.filter((p) => p.y < canvas.height + 50);
+    }, 3500);
+  }
+
+  function animateConfetti() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    confettiPieces.forEach((p) => {
+      p.y += p.speedY;
+      p.x += p.speedX;
+      p.rotation += p.rotationSpeed;
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate((p.rotation * Math.PI) / 180);
+      ctx.fillStyle = p.color;
+
+      if (p.shape === 'circle') {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+      }
+      ctx.restore();
+    });
+
+    confettiPieces = confettiPieces.filter((p) => p.y < canvas.height + 50);
+
+    if (confettiPieces.length > 0) {
+      confettiAnimationId = requestAnimationFrame(animateConfetti);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      confettiAnimationId = null;
+    }
+  }
+
+});
 /* ============================================================
    SCRIPT.JS — Mr. Senthilkumar Appreciation Page
    ============================================================ */
